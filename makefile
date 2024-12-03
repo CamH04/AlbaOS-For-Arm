@@ -1,19 +1,41 @@
-CFILES = $(wildcard *.c)
-OFILES = $(CFILES:.c=.o)
-GCCFLAGS = -Wall -O2 -ffreestanding -nostdinc -nostdlib -nostartfiles
-GCCPATH = gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf/bin
+# Compiler and tools
+AS = arm-none-eabi-as
+CC = arm-none-eabi-gcc
+LD = arm-none-eabi-ld
+QEMU = qemu-system-arm
 
-all: clean kernel8.img
+# Flags
+CFLAGS = -ffreestanding -Wall -Wextra -Werror
+ASFLAGS = -march=armv7-a -mcpu=cortex-a15
+LDFLAGS = -T linker.ld
 
-boot.o: boot.s
-	$(GCCPATH)/aarch64-none-elf-gcc $(GCCFLAGS) -c boot.s -o boot.o
+# Sources and objects
+START_AS = _start.arm
+START_O = _start.o
+START_C = start.c
+START_OBJ = start.o
+KERNEL_ELF = kernel.elf
 
-%.o: %.c
-	$(GCCPATH)/aarch64-none-elf-gcc $(GCCFLAGS) -c $< -o $@
+# Default target
+all: $(KERNEL_ELF)
 
-kernel8.img: boot.o $(OFILES)
-	$(GCCPATH)/aarch64-none-elf-ld -nostdlib boot.o $(OFILES) -T link.ld -o kernel8.elf
-	$(GCCPATH)/aarch64-none-elf-objcopy -O binary kernel8.elf kernel8.img
+# Assemble the _start.arm to _start.o
+$(START_O): $(START_AS)
+	$(AS) $(ASFLAGS) $(START_AS) -o $(START_O)
 
+# Compile start.c to start.o
+$(START_OBJ): $(START_C)
+	$(CC) $(CFLAGS) -c $(START_C) -o $(START_OBJ)
+
+# Link _start.o and start.o to create kernel.elf
+$(KERNEL_ELF): $(START_O) $(START_OBJ)
+	$(LD) $(LDFLAGS) $(START_O) $(START_OBJ) -o $(KERNEL_ELF)
+
+# Run the kernel using QEMU
+run: $(KERNEL_ELF)
+	$(QEMU) -M vexpress-a15 -cpu cortex-a15 -kernel $(KERNEL_ELF) -nographic
+
+# Clean up object files and kernel
 clean:
-	/bin/rm kernel8.elf *.o *.img > /dev/null 2> /dev/null || true
+	rm -f $(START_O) $(START_OBJ) $(KERNEL_ELF)
+
