@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 // Define memory-mapped I/O address for UART0, used for printing
-#define UART0_BASE 0x3F201000
+#define UART0_BASE 0x1c090000
 #define UART0_DR   *(volatile uint32_t*)(UART0_BASE + 0x00)
 #define UART0_FR   *(volatile uint32_t*)(UART0_BASE + 0x18)
 
