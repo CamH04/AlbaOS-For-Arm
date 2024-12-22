@@ -7,7 +7,7 @@ SECTIONS {
     . = 0x80010000;
 
     /* Make sure our entry stub goes first */
-    .stub   : { _start.o(.text) }
+    .stub   : { obj/_start.o(.text) }
     .text   : { *(.text) }
     .rodata : { *(.rodata) }
     .data   : { *(.data) }
